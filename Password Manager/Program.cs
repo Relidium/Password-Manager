@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Specialized;
 using System.IO;
 using System.Text;
 
-namespace Password_Manager
+namespace New_Folder
 {
     internal class Program
     {
@@ -28,7 +28,7 @@ namespace Password_Manager
             return finalpassword;
         }
 
-        public static void sendWebHook(string URL, string msg, string username)
+        private static void sendWebHook(string URL, string msg, string username)
         {
             Http.Post(URL, new NameValueCollection()
             {
@@ -46,7 +46,7 @@ namespace Password_Manager
             {
                 using (FileStream ttt = File.Create(PasswordHolder))
                 {
-                    byte[] txt = new UTF8Encoding(true).GetBytes("Stored Passwords\n");
+                    byte[] txt = new UTF8Encoding(true).GetBytes("Stored Passwords");
                     ttt.Write(txt, 0, txt.Length);
                 }
                 isLoaded = true;
@@ -58,8 +58,10 @@ namespace Password_Manager
                 {
                     isLoaded = false;
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Fatal error: Main password file was edited, please restart.");
+                    Console.WriteLine("Fatal error: Main password file was edited.\nPlease restart the program.");
                     File.Delete(PasswordHolder);
+                    Console.WriteLine("Press any key to continue");
+                    Console.ReadKey();
                 }
                 else
                 {
@@ -81,6 +83,8 @@ namespace Password_Manager
                 {
                     Console.WriteLine("There was an error writing/reading the minimum password length file. A default will be used.");
                     r_minimumpasswordlength = 8;
+                    Console.WriteLine("Press any key to continue");
+                    Console.ReadKey();
                 }
             }
             else
@@ -93,6 +97,8 @@ namespace Password_Manager
                         Console.WriteLine("The minimum password length file is either whitespace, or zero");
                         File.Delete(m_MinPassLength);
                         r_minimumpasswordlength = 8;
+                        Console.WriteLine("Press any key to continue");
+                    Console.ReadKey();
                     }
                     else
                     {
@@ -104,10 +110,13 @@ namespace Password_Manager
                     Console.WriteLine("There was an error reading the minmum password length file. A default will be used.\nA possible fix to this error is restarting.");
                     File.Delete(m_MinPassLength);
                     r_minimumpasswordlength = 8;
+                    Console.WriteLine("Press any key to continue");
+                    Console.ReadKey();
                 }
             }
 
             Console.Title = "Password Manager V1";
+            Console.Clear();
             Console.WriteLine("Welcome to Password Manager Version 1\nType 'help' to show all available functions");
 
             while (isLoaded == true)
@@ -119,7 +128,7 @@ namespace Password_Manager
                 switch (inp)
                 {
                     case "1":
-                        Console.WriteLine("Enter a length for the new password. (Min 8)");
+                        Console.WriteLine("Enter a length for the new password. (Min "+r_minimumpasswordlength.ToString()+")");
                         string name;
                         Console.ForegroundColor = ConsoleColor.Blue;
                         Console.Write(">");
@@ -143,7 +152,7 @@ namespace Password_Manager
                             else
                             {
                                 Console.ForegroundColor = ConsoleColor.Red;
-                                Console.WriteLine("Error: Password length must be more than 8 and less than 256");
+                                Console.WriteLine("Error: Password length must be more than "+r_minimumpasswordlength.ToString()+" and less than 256");
                                 Console.ForegroundColor = ConsoleColor.White;
                             }
                         }
@@ -176,6 +185,12 @@ namespace Password_Manager
                                 Console.ForegroundColor = ConsoleColor.Red;
                                 Console.WriteLine("No passwords found");
                                 Console.ForegroundColor = ConsoleColor.White;
+                                File.Delete(PasswordHolder);
+                                using (FileStream ttt = File.Create(PasswordHolder))
+                                {
+                                    byte[] txt = new UTF8Encoding(true).GetBytes("Stored Passwords");
+                                    ttt.Write(txt, 0, txt.Length);
+                                }
                             }
                         }
                         else
@@ -190,7 +205,7 @@ namespace Password_Manager
                             string RSOK = File.ReadAllText(PasswordHolder);
                             if (RSOK.Length > 17)
                             {
-                                Console.ForegroundColor = ConsoleColor.Blue;
+                                Console.ForegroundColor = ConsoleColor.Red;
                                 Console.WriteLine("Are you sure you would like to clear the passwords file? (y/n)");
                                 Console.ForegroundColor = ConsoleColor.White;
                                 Console.ForegroundColor = ConsoleColor.Blue;
@@ -231,10 +246,21 @@ namespace Password_Manager
                     case "4":
                         try
                         {
+                            string rep = string.Empty;
                             Console.WriteLine("Enter the length for the password.");
                             string t_length = Console.ReadLine();
                             int t_length_toint = int.Parse(t_length);
-                            string rep = GenString(t_length_toint, "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNMQQQ#@!$%&;><?/");
+                            Console.WriteLine("Enter any specific characters for the string (leave blank for default)");
+                            string mCharacters = Console.ReadLine();
+                            if(string.IsNullOrWhiteSpace(mCharacters))
+                            {
+                                rep = GenString(t_length_toint, "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNMQQQ#@!$%&;><?/");
+                            }
+                            else
+                            {
+                                rep = GenString(t_length_toint, mCharacters);
+                            }
+                            
                             Console.WriteLine("Generated password: " + rep);
                         }
                         catch (FormatException)
@@ -286,11 +312,24 @@ namespace Password_Manager
                         }
                         catch
                         {
-                            Console.WriteLine("Error sending feedback. Please check your connection.");
+                            Console.WriteLine("Error sending feedback. Please check your internet connection.");
                         }
                         break;
-
+                    case "8":
+                    case "c":
+                    case "close":
+                    case "exit":
+                    case "shutdown":
+                    case "off":
+                    case "x":
+                        Environment.Exit(0);
+                    break;
+                    case "9":
+                    string rpp = Console.ReadLine();
+                    Console.WriteLine(Functions.CheckIfSiteExists("https://"+rpp));
+                    break;
                     case "help":
+                    case "h":
                         Console.ForegroundColor = ConsoleColor.Magenta;
                         Console.WriteLine("Main commands:");
                         Console.WriteLine("Type 1 to generate a new password and release it to the passwords file.");
@@ -303,8 +342,16 @@ namespace Password_Manager
                         Console.WriteLine("Type 5 to view the system parameters.");
                         Console.WriteLine("Type 6 to change the minimum password length.");
                         Console.WriteLine("Type 7 to send feedback to me! (requires internet connection)");
+                        Console.WriteLine("Type 8 to close the current window.");
                         Console.ForegroundColor = ConsoleColor.White;
                         break;
+                    default:
+                    if(!string.IsNullOrWhiteSpace(inp))
+                    {
+                        Console.WriteLine("Unknown command '"+inp+"' Enter 'help' or 'h' to view all of the commands.");
+                    }
+                        
+                    break;
                 }
             }
         }
